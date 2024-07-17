@@ -1,0 +1,551 @@
+simulation_metadata:
+  device: 'cpu'
+  num_episodes: 7
+  num_steps_per_episode: 200
+  num_substeps_per_step: 5
+  calibration: false
+  visualize: true
+
+  max_x: 1000
+  max_y: 1000
+  num_bap: 100 # number of BAPs (e.g., EV owners)
+  num_bpp: 20 # number of BPPs (e.g., charging stations)
+  num_bg: 1 # number of Beckn Gateways
+  max_orders: 1000
+
+state:
+  environment:
+    last_order_id:
+      name: 'Last Created Order'
+      learnable: false
+      shape:
+        - 1
+      dtype: 'int'
+      value: -1
+      initialization_function: null
+  network: null
+
+  agents:
+    bap:
+      number: ${simulation_metadata.num_bap}
+      properties:
+        id:
+          name: 'ID'
+          learnable: false
+          shape:
+            - ${state.agents.bap.number}
+            - 1
+          dtype: 'int'
+          initialization_function:
+            generator: 'generate_ids'
+            arguments:
+              shape:
+                learnable: false
+                shape:
+                  - 2
+                value:
+                  - ${state.agents.bap.number}
+                  - 1
+                initialization_function: null
+        coordinates:
+          name: 'Position'
+          learnable: false
+          shape:
+            - ${state.agents.bap.number}
+            - 2
+          dtype: 'float'
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 0
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: ${simulation_metadata.max_x}
+                initialization_function: null
+        resource_level:
+          name: 'Resource Level'
+          learnable: false
+          shape:
+            - ${state.agents.bap.number}
+            - 1
+          dtype: 'float'
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 0
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 100
+                initialization_function: null
+        current_order:
+          name: 'Current Order'
+          learnable: false
+          shape:
+            - ${state.agents.bap.number}
+            - 1
+          dtype: 'int'
+          value: -1 # -1 indicates no active order
+          initialization_function: null
+        wallet:
+          name: 'Available Money'
+          learnable: false
+          shape:
+            - ${state.agents.bap.number}
+            - 1
+          dtype: 'float'
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 100
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 1000
+                initialization_function: null
+
+    bpp:
+      number: ${simulation_metadata.num_bpp}
+      properties:
+        id:
+          name: 'ID'
+          learnable: false
+          shape:
+            - ${state.agents.bpp.number}
+            - 1
+          dtype: 'int'
+          initialization_function:
+            generator: 'generate_ids'
+            arguments:
+              shape:
+                learnable: false
+                shape:
+                  - 2
+                value:
+                  - ${state.agents.bpp.number}
+                  - 1
+                initialization_function: null
+        coordinates:
+          name: 'Position'
+          learnable: false
+          shape:
+            - ${state.agents.bpp.number}
+            - 2
+          dtype: 'float'
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 0
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: ${simulation_metadata.max_x}
+                initialization_function: null
+        max_capacity:
+          name: 'Max Service Capacity'
+          learnable: false
+          shape:
+            - ${state.agents.bpp.number}
+            - 1
+          dtype: 'int'
+          initialization_function:
+            generator: 'random_int'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 1
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 10
+                initialization_function: null
+        price:
+          name: 'Service Price'
+          learnable: true
+          shape:
+            - ${state.agents.bpp.number}
+            - 1
+          dtype: 'float'
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 0.1
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 0.5
+                initialization_function: null
+        available_capacity:
+          name: 'Current Available Capacity'
+          learnable: false
+          shape:
+            - ${state.agents.bpp.number}
+            - 1
+          dtype: 'int'
+          initialization_function:
+            generator: 'random_int'
+            arguments:
+              lower_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 1
+                initialization_function: null
+              upper_limit:
+                learnable: false
+                shape:
+                  - 1
+                value: 10
+                initialization_function: null
+        rating:
+          name: 'Service Rating'
+          learnable: false
+          shape:
+            - ${state.agents.bpp.number}
+            - 1
+          dtype: 'float'
+          value: 0
+          initialization_function: null
+        num_ratings:
+          name: 'Number of Ratings'
+          learnable: false
+          shape:
+            - ${state.agents.bpp.number}
+            - 1
+          dtype: 'int'
+          value: 0
+          initialization_function: null
+
+    bg:
+      number: ${simulation_metadata.num_bg}
+      properties:
+        id:
+          name: 'ID'
+          learnable: false
+          shape:
+            - ${state.agents.bg.number}
+            - 1
+          dtype: 'int'
+          initialization_function:
+            generator: 'generate_ids'
+            arguments:
+              shape:
+                learnable: false
+                shape:
+                  - 2
+                value:
+                  - ${state.agents.bg.number}
+                  - 1
+                initialization_function: null
+        network_traffic:
+          name: 'Network Traffic'
+          learnable: false
+          shape:
+            - ${state.agents.bg.number}
+            - 1
+          dtype: 'int'
+          value: 0
+          initialization_function: null
+
+  objects:
+    order:
+      number: ${simulation_metadata.max_orders}
+      properties:
+        id:
+          name: 'ID'
+          learnable: false
+          shape:
+            - ${state.objects.order.number}
+            - 1
+          dtype: 'int'
+          initialization_function:
+            generator: 'generate_ids'
+            arguments:
+              shape:
+                learnable: false
+                shape:
+                  - 2
+                value:
+                  - ${state.objects.order.number}
+                  - 1
+                initialization_function: null
+        bap_id:
+          name: 'BAP ID'
+          learnable: false
+          shape:
+            - ${state.objects.order.number}
+            - 1
+          dtype: 'int'
+          value: -1
+          initialization_function: null
+        bpp_id:
+          name: 'BPP ID'
+          learnable: false
+          shape:
+            - ${state.objects.order.number}
+            - 1
+          dtype: 'int'
+          value: -1
+          initialization_function: null
+        quantity:
+          name: 'Service Quantity'
+          learnable: false
+          shape:
+            - ${state.objects.order.number}
+            - 1
+          dtype: 'float'
+          value: -1
+          initialization_function: null
+        status:
+          name: 'Order Status'
+          learnable: false
+          shape:
+            - ${state.objects.order.number}
+            - 1
+          dtype: 'int' # 0: Created, 1: Confirmed, 2: In Progress, 3: Completed, 4: Cancelled
+          value: -1
+          initialization_function: null
+
+substeps:
+  '0':
+    name: 'Search'
+    description: 'BAP searches for available BPPs'
+    active_agents:
+      - 'bap'
+    observation:
+      bap:
+        find_nearby_bpps:
+          generator: 'FindNearbyBPPs'
+          arguments: null
+          input_variables:
+            bap_positions: 'agents/bap/coordinates'
+            bpp_positions: 'agents/bpp/coordinates'
+          output_variables:
+            - distances
+            - mask
+    policy:
+      bap:
+        select_bpp:
+          generator: 'SelectBPP'
+          arguments: null
+          input_variables:
+            bpp_prices: 'agents/bpp/price'
+            bpp_capacity: 'agents/bpp/available_capacity'
+            resource_level: 'agents/bap/resource_level'
+          output_variables:
+            - selected_bpps
+    transition:
+      create_order:
+        generator: 'CreateOrder'
+        arguments: null
+        input_variables:
+          bap_id: 'agents/bap/id'
+          resource_level: 'agents/bap/resource_level'
+          last_order_id: 'environment/last_order_id'
+          order_bap_id: 'objects/order/bap_id'
+          order_bpp_id: 'objects/order/bpp_id'
+          order_quantity: 'objects/order/quantity'
+          order_status: 'objects/order/status'
+        output_variables:
+          - order_bap_id
+          - order_bpp_id
+          - order_quantity
+          - order_status
+
+  '1':
+    name: 'Confirm'
+    description: 'BPP confirms the order'
+    active_agents:
+      - 'bpp'
+    observation:
+      bpp:
+        check_availability:
+          generator: 'CheckAvailability'
+          arguments: null
+          input_variables:
+            bpp_capacity: 'agents/bpp/available_capacity'
+          output_variables:
+            - is_available
+    policy:
+      bpp:
+        confirm_order:
+          generator: 'ConfirmOrder'
+          arguments: null
+          input_variables: null
+          output_variables:
+            - order_confirmation
+    transition:
+      update_order_status:
+        generator: 'UpdateOrderStatus'
+        arguments: null
+        input_variables:
+          bpp_capacity: 'agents/bpp/available_capacity'
+          order_bpp_id: 'objects/order/bpp_id'
+          order_status: 'objects/order/status'
+        output_variables:
+          - order_status
+          - bpp_capacity
+
+  '2':
+    name: 'Fulfill'
+    description: 'BAP receives service from BPP'
+    active_agents:
+      - 'bap'
+    observation:
+      bap:
+        get_route:
+          generator: 'GetRoute'
+          arguments: null
+          input_variables:
+            bap_pos: 'agents/bap/coordinates'
+            bpp_pos: 'agents/bpp/coordinates'
+            order_bap_id: 'objects/order/bap_id'
+            order_bpp_id: 'objects/order/bpp_id'
+            order_status: 'objects/order/status'
+          output_variables:
+            - distances
+            - involved_baps
+            - involved_bpps
+            - orders_to_update
+    policy:
+      bap:
+        consume_service:
+          generator: 'ConsumeService'
+          arguments: null
+          input_variables:
+            bap_pos: 'agents/bap/coordinates'
+            bap_res: 'agents/bap/resource_level'
+          output_variables:
+            - movement
+            - service_progress
+            - involved_baps
+            - orders_to_update
+    transition:
+      update_positions_and_resources:
+        generator: 'UpdatePositionsAndResources'
+        arguments: null
+        input_variables:
+          bap_pos: 'agents/bap/coordinates'
+          bap_res: 'agents/bap/resource_level'
+          bpp_cap: 'agents/bpp/available_capacity'
+          order_status: 'objects/order/status'
+        output_variables:
+          - bap_pos
+          - bap_res
+          - bpp_cap
+          - order_status
+
+  '3':
+    name: 'Pay'
+    description: 'BAP pays for the service'
+    active_agents:
+      - 'bap'
+    observation:
+      bap:
+        get_order_details:
+          generator: 'GetOrderDetails'
+          arguments: null
+          input_variables:
+            order_bap_id: 'objects/order/bap_id'
+            order_bpp_id: 'objects/order/bpp_id'
+            order_status: 'objects/order/status'
+          output_variables:
+            - involved_baps
+            - involved_bpps
+            - orders_to_update
+    policy:
+      bap:
+        calculate_payment:
+          generator: 'CalculatePayment'
+          arguments: null
+          input_variables:
+            bpp_price: 'agents/bpp/price'
+            order_quantity: 'objects/order/quantity'
+          output_variables:
+            - payments_to_make
+            - involved_baps
+            - involved_bpps
+    transition:
+      update_wallets:
+        generator: 'UpdateWallets'
+        arguments: null
+        input_variables:
+          bap_wallet: 'agents/bap/wallet'
+        output_variables:
+          - bap_wallet
+
+  '4':
+    name: 'Rate'
+    description: 'BAP rates the service'
+    active_agents:
+      - 'bap'
+    observation:
+      bap:
+        get_service_experience:
+          generator: 'GetServiceExperience'
+          arguments: null
+          input_variables:
+            order_bap_id: 'objects/order/bap_id'
+            order_bpp_id: 'objects/order/bpp_id'
+            order_status: 'objects/order/status'
+          output_variables:
+            - involved_baps
+            - involved_bpps
+    policy:
+      bap:
+        calculate_rating:
+          generator: 'CalculateRating'
+          arguments: null
+          input_variables:
+            bpp_rating: 'agents/bpp/rating'
+            bpp_num_ratings: 'agents/bpp/num_ratings'
+          output_variables:
+            - ratings_given
+            - num_ratings_given
+            - involved_baps
+            - involved_bpps
+    transition:
+      update_bpp_rating:
+        generator: 'UpdateBPPRating'
+        arguments: null
+        input_variables:
+          bpp_rating: 'agents/bpp/rating'
+          bpp_num_ratings: 'agents/bpp/num_ratings'
+        output_variables:
+          - bpp_rating
+          - bpp_num_ratings
